@@ -75,7 +75,7 @@ flowchart LR
     E --> F[("Star Schema DWH")]
     F --> G["SQL Analytics"]
     F --> H["Streamlit Dashboard"]
-    F --> I["Power BI"]
+    F -.-> I["Power BI<br/>(panduan, belum dibuat)"]
     G --> J["Insight Report"]
 ```
 
