@@ -1,4 +1,4 @@
-"""Halaman 4 — Inventory & Restock: stok, dead stock, rekomendasi restock."""
+"""Halaman 4 - Inventory & Restock: stok, dead stock, rekomendasi restock."""
 import sys
 from pathlib import Path
 
@@ -108,7 +108,14 @@ with col2:
                            labels={"nilai": "Nilai Stok (Rp)", "kategori": ""})
                     .update_layout(showlegend=False, height=380), width='stretch')
 
-dead_val = ds["nilai_mengendap"].sum() if len(ds) else 0
+# Total modal mengendap untuk SEMUA SKU dead/slow, bukan hanya 15 baris yang tampil di tabel
+dead_val = run_query(STOCK_CTE + """
+    SELECT COALESCE(SUM(COALESCE(s.stock_now,0) * p.cost_price), 0) AS v
+    FROM dim_product p
+    LEFT JOIN sold so ON p.product_key = so.product_key
+    LEFT JOIN stock s ON p.product_key = s.product_key
+    WHERE COALESCE(so.qty_sold,0) <= 5
+""").iloc[0]["v"]
 st.warning(f"💡 **Insight:** Sekitar **{int(dead)} SKU** tergolong dead/slow stock dengan "
            f"modal mengendap ~**{rupiah(dead_val)}**. Pertimbangkan clearance sale, bundling, "
            f"atau stop restock. Sementara **{int(low)} produk** butuh restock segera agar "

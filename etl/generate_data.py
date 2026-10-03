@@ -332,7 +332,7 @@ def gen_purchasing_and_inventory(products: pd.DataFrame, stores: pd.DataFrame,
     supp_of = products.set_index("product_id")["supplier_id"].to_dict()
     d0 = datetime.strptime(cfg.DATA_START, "%Y-%m-%d").date()
 
-    # Terjual per (store, product) — buang duplikat detail dulu
+    # Terjual per (store, product) - buang duplikat detail dulu
     det = sales_details.drop_duplicates(subset=["detail_id"]).merge(
         sales_trx[["transaction_id", "store_id", "transaction_date"]],
         on="transaction_id", how="left")

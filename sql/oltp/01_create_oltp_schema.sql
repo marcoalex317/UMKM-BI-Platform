@@ -1,5 +1,5 @@
 -- =============================================================================
--- OLTP SCHEMA — Rumah Mode Nusantara (UMKM Fashion Retail)
+-- OLTP SCHEMA - Rumah Mode Nusantara (UMKM Fashion Retail)
 -- =============================================================================
 -- Skema transaksional (Operational / OLTP) yang menormalkan proses bisnis:
 -- master data (kategori, produk, supplier, toko, pelanggan), penjualan,
@@ -44,7 +44,7 @@ CREATE TABLE suppliers (
 );
 
 -- ----------------------------------------------------------------------------
--- Master: Produk (SKU) fashion — punya size, color, brand
+-- Master: Produk (SKU) fashion - punya size, color, brand
 -- ----------------------------------------------------------------------------
 CREATE TABLE products (
     product_id      SERIAL PRIMARY KEY,
@@ -100,7 +100,7 @@ CREATE TABLE sales_transactions (
 );
 
 -- ----------------------------------------------------------------------------
--- Detail penjualan (line item) — grain 1 baris per produk per transaksi
+-- Detail penjualan (line item) - grain 1 baris per produk per transaksi
 -- ----------------------------------------------------------------------------
 CREATE TABLE sales_details (
     detail_id       SERIAL PRIMARY KEY,
@@ -113,7 +113,7 @@ CREATE TABLE sales_details (
 );
 
 -- ----------------------------------------------------------------------------
--- Purchase Order (header) — pembelian stok ke supplier
+-- Purchase Order (header) - pembelian stok ke supplier
 -- ----------------------------------------------------------------------------
 CREATE TABLE purchase_orders (
     po_id           SERIAL PRIMARY KEY,

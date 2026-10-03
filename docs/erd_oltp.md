@@ -1,4 +1,4 @@
-# ERD — OLTP Schema
+# ERD: OLTP Schema
 
 Entity Relationship Diagram untuk layer transaksional (OLTP). Dirender otomatis oleh
 GitHub via Mermaid.

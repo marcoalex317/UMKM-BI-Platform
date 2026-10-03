@@ -1,4 +1,4 @@
-"""Halaman 2 — Sales Performance: tren penjualan, channel, pembayaran."""
+"""Halaman 2 - Sales Performance: tren penjualan, channel, pembayaran."""
 import sys
 from pathlib import Path
 
@@ -90,5 +90,5 @@ st.plotly_chart(px.bar(dow, x="day_name", y="revenue", color="revenue",
 
 best_ch = ch.iloc[0]["channel"] if len(ch) else "-"
 st.success(f"💡 **Insight:** Channel **{best_ch}** menyumbang revenue tertinggi. "
-           f"Penjualan cenderung naik di akhir pekan — pertimbangkan promo weekend "
+           f"Penjualan cenderung naik di akhir pekan - pertimbangkan promo weekend "
            f"dan penguatan stok jelang musim ramai.")

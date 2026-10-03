@@ -1,4 +1,4 @@
-"""Halaman 6 — Branch/Store Performance: perbandingan & ranking cabang."""
+"""Halaman 6 - Branch/Store Performance: perbandingan & ranking cabang."""
 import sys
 from pathlib import Path
 
@@ -87,6 +87,6 @@ if len(rank):
     st.success(
         f"💡 **Insight:** Cabang terbaik **{best['store_name']}** "
         f"({rupiah(best['revenue'])}) vs terlemah **{worst['store_name']}** "
-        f"({rupiah(worst['revenue'])}) — selisih ~**{gap:.1f}x**. "
+        f"({rupiah(worst['revenue'])}) - selisih ~**{gap:.1f}x**. "
         f"Evaluasi cabang berperforma rendah: lokasi, staf, stok, atau dorong "
         f"channel online untuk menaikkan jangkauan.")

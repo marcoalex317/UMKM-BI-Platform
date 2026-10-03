@@ -1,4 +1,4 @@
-# Power BI — Panduan Koneksi & Measures
+# Power BI: Panduan Koneksi & Measures
 
 Dashboard utama proyek ini dibangun dengan **Streamlit** (code-based, dapat direview di
 GitHub). Berikut panduan mereplikasi analitik yang sama di **Power BI** sebagai alternatif
@@ -8,14 +8,14 @@ GitHub). Berikut panduan mereplikasi analitik yang sama di **Power BI** sebagai 
 
 Power BI Desktop dapat terhubung ke warehouse melalui salah satu cara:
 
-**Opsi A — PostgreSQL (disarankan untuk Power BI)**
-1. Set `.env` → `DB_ENGINE=postgres`, lalu jalankan `python etl/run_pipeline.py`.
-2. Di Power BI: **Get Data → PostgreSQL database** → isi host, database `umkm_bi`.
+**Opsi A: PostgreSQL (disarankan untuk Power BI)**
+1. Di `.env`, set `DB_ENGINE=postgres`, lalu jalankan `python etl/run_pipeline.py`.
+2. Di Power BI, pilih **Get Data > PostgreSQL database**, lalu isi host, database `umkm_bi`.
 3. Pilih tabel: `fact_sales`, `fact_inventory`, `dim_date`, `dim_product`,
    `dim_customer`, `dim_store`, `dim_supplier`.
 
-**Opsi B — dari CSV**
-1. **Get Data → Text/CSV** dari folder `data/raw/` (atau export tabel DWH ke CSV).
+**Opsi B: dari CSV**
+1. **Get Data > Text/CSV** dari folder `data/raw/` (atau export tabel DWH ke CSV).
 
 ## 2. Model Relasi (Star Schema)
 
@@ -31,7 +31,7 @@ Buat relasi *many-to-one* dari fact ke dimension:
 | fact_inventory | dim_product | product_key |
 | fact_inventory | dim_store | store_key |
 
-Tandai `dim_date` sebagai **Date table** (Mark as date table → full_date).
+Tandai `dim_date` sebagai **Date table** (Mark as date table, pilih kolom full_date).
 
 ## 3. Contoh DAX Measures
 
@@ -67,7 +67,7 @@ CALCULATE (
 
 ## 4. Halaman yang Disarankan
 Replikasikan 6 halaman Streamlit: **Executive Overview, Sales Performance,
-Product & Category, Inventory & Restock, Customer Analysis, Branch Performance** —
+Product & Category, Inventory & Restock, Customer Analysis, Branch Performance**,
 dengan KPI card (measures di atas), slicer (Tanggal, Cabang, Channel), dan visual
 bar/line/donut/table yang setara.
 

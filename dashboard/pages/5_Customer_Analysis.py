@@ -1,4 +1,4 @@
-"""Halaman 5 — Customer Analysis: repeat rate, tier, RFM sederhana, demografi."""
+"""Halaman 5 - Customer Analysis: repeat rate, tier, RFM sederhana, demografi."""
 import sys
 from pathlib import Path
 
@@ -115,6 +115,6 @@ st.dataframe(top_disp.rename(columns={"full_name": "Nama", "city": "Kota",
              "member_tier": "Tier", "n_trx": "Transaksi", "total": "Total Belanja"}),
              width='stretch', hide_index=True)
 
-st.success(f"💡 **Insight:** Repeat rate **{rate:.1f}%** — segmen *Champion* & *Loyal* "
+st.success(f"💡 **Insight:** Repeat rate **{rate:.1f}%** - segmen *Champion* & *Loyal* "
            f"menjadi tulang punggung revenue. Rancang program loyalti (poin/tier upgrade) "
            f"untuk mengubah pelanggan *Occasional* menjadi repeat buyer.")

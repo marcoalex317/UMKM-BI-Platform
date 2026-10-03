@@ -1,5 +1,5 @@
 """
-streamlit_app.py — Landing page dashboard BI "Rumah Mode Nusantara".
+streamlit_app.py - Landing page dashboard BI "Rumah Mode Nusantara".
 
 Jalankan dari root project:
     streamlit run dashboard/streamlit_app.py
@@ -14,10 +14,10 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from utils.db import db_ready, run_query, rupiah  # noqa: E402
 
-st.set_page_config(page_title="Rumah Mode Nusantara — BI Platform",
+st.set_page_config(page_title="Rumah Mode Nusantara - BI Platform",
                    page_icon="📊", layout="wide")
 
-st.title("📊 Rumah Mode Nusantara — Business Intelligence Platform")
+st.title("📊 Rumah Mode Nusantara - Business Intelligence Platform")
 st.caption("End-to-End Retail BI untuk UMKM Fashion Indonesia")
 
 if not db_ready():

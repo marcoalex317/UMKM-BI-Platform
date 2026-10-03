@@ -1,6 +1,6 @@
 -- =============================================================================
--- DATA WAREHOUSE — STAR SCHEMA (dimensional model)
--- Rumah Mode Nusantara — analitik penjualan & inventori
+-- DATA WAREHOUSE - STAR SCHEMA (dimensional model)
+-- Rumah Mode Nusantara - analitik penjualan & inventori
 -- =============================================================================
 -- Model dimensional (Kimball) untuk kebutuhan analitik/BI. Dipisahkan dari OLTP
 -- agar query agregasi cepat dan mudah dipahami owner UMKM.

@@ -63,7 +63,7 @@ def engine_label() -> str:
 
 
 # --------------------------------------------------------------------------- #
-# Konstanta domain — konteks UMKM Fashion Indonesia
+# Konstanta domain - konteks UMKM Fashion Indonesia
 # --------------------------------------------------------------------------- #
 RANDOM_SEED = 42
 

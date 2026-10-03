@@ -31,7 +31,7 @@ def main() -> None:
 
     t0 = time.time()
     print("=" * 64)
-    print(f"  ETL PIPELINE — {cfg.COMPANY_NAME}")
+    print(f"  ETL PIPELINE - {cfg.COMPANY_NAME}")
     print(f"  Target DB : {cfg.engine_label()}")
     print("=" * 64)
 

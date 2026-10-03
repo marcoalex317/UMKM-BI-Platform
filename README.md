@@ -1,47 +1,70 @@
-# 📊 End-to-End Retail BI Platform untuk UMKM Indonesia
+# End-to-End Retail BI Platform untuk UMKM Indonesia
 
-> Platform Business Intelligence *end-to-end* untuk chain fashion UMKM fiktif
-> **"Rumah Mode Nusantara"** — dari desain database, data warehouse, ETL pipeline,
-> hingga dashboard interaktif dan *actionable business insight*.
+Proyek ini saya buat untuk mempraktikkan alur kerja BI dari awal sampai akhir
+pada sebuah chain fashion UMKM fiktif bernama **Rumah Mode Nusantara**. Saya
+merancang database transaksional, membangun data warehouse dengan star schema,
+menulis ETL pipeline di Python, menjawab pertanyaan bisnis dengan SQL, lalu
+menyajikannya dalam dashboard Streamlit enam halaman.
 
-<p align="left">
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white">
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-DWH-4169E1?logo=postgresql&logoColor=white">
-  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-fallback-003B57?logo=sqlite&logoColor=white">
-  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white">
-  <img alt="Power BI" src="https://img.shields.io/badge/Power_BI-guide-F2C811?logo=powerbi&logoColor=black">
-</p>
+Datanya saya bangkitkan sendiri dengan Faker, lengkap dengan atribut khas fashion
+(ukuran, warna, brand) dan pola musim belanja Indonesia seperti Ramadan, Lebaran,
+dan Harbolnas.
 
----
+![Halaman Executive Overview](assets/screenshots/01-executive-overview.png)
 
-## 🎯 Project Overview
+## Pertanyaan yang ingin dijawab
 
-Proyek portofolio yang mendemonstrasikan **alur BI lengkap** yang biasa dikerjakan seorang
-*BI / Data Analyst*: memahami proses bisnis retail, merancang OLTP database, membangun
-**data warehouse (star schema)**, menulis **ETL pipeline**, menjawab pertanyaan bisnis
-dengan **SQL analitik**, dan menyajikannya dalam **dashboard** yang dipakai owner untuk
-mengambil keputusan.
+Pemilik UMKM fashion biasanya punya banyak data transaksi, tapi jarang
+memakainya untuk mengambil keputusan. Saya membatasi analisis pada delapan
+pertanyaan:
 
-Domain: **fashion & apparel** — lengkap dengan atribut khas (ukuran, warna, brand) dan
-pola musiman Indonesia (**Ramadan/Lebaran**, **Harbolnas 11.11 & 12.12**).
+1. Produk apa yang paling laris dan paling menguntungkan?
+2. Produk mana yang revenue-nya tinggi tapi margin-nya rendah?
+3. Cabang mana yang terbaik dan terburuk?
+4. Seberapa loyal pelanggan, dan berapa repeat rate-nya?
+5. Produk mana yang tidak laku dan menahan modal?
+6. Produk mana yang perlu segera di-restock?
+7. Bagaimana pola penjualan sepanjang tahun?
+8. Channel penjualan mana yang paling efektif?
 
-## 🧩 Business Problem
+Latar belakang lengkapnya ada di [docs/01_business_case.md](docs/01_business_case.md).
 
-UMKM fashion punya banyak data transaksi, tetapi jarang mengubahnya jadi keputusan.
-Platform ini menjawab 8 pertanyaan inti:
+## Apa yang saya temukan
 
-1. Produk paling laris & paling menguntungkan?
-2. Produk *revenue* tinggi tapi *margin* rendah?
-3. Cabang terbaik & terburuk?
-4. Pelanggan paling loyal & *repeat rate*?
-5. Produk *slow moving / dead stock*?
-6. Produk yang perlu *restock*?
-7. Tren penjualan musiman?
-8. Channel penjualan paling efektif?
+Total revenue dalam 12 bulan adalah Rp 9,28 miliar dengan margin 38,4%. Secara
+umum bisnisnya sehat, tapi ada beberapa hal yang menahan profit dan kas:
 
-Detail: [docs/01_business_case.md](docs/01_business_case.md).
+- **Rp 411 juta modal tertahan di 22 SKU yang hampir tidak laku**, atau 32% dari
+  seluruh nilai stok.
+- **25 SKU bermargin tipis menyerap 12,4% revenue tapi cuma menyumbang 3,1%
+  gross profit.** Satu topi yang laris bahkan hanya bermargin 6,1% setelah diskon.
+- **39% revenue setahun terjadi di tiga bulan saja**: Maret dan April saat
+  Ramadan, serta Desember saat Harbolnas.
+- **Satu produk, Rok Senja Label Abu-abu, menyumbang 9% revenue.**
+- **Cabang Medan hanya menghasilkan sekitar seperenam dari Jakarta**, dan separuh
+  dari cabang reguler terlemah lainnya.
+- **Channel online sudah 51% revenue**, dengan nilai transaksi rata-rata yang
+  sedikit lebih tinggi dari offline.
+- **Tier member belum membedakan pelanggan.** Rata-rata belanja per orang hampir
+  sama di Bronze, Silver, dan Gold.
 
-## 🏗️ Architecture
+## Dampak bisnis
+
+Saya menghitung dampak rekomendasi utama langsung dari data warehouse dengan
+asumsi yang sengaja konservatif:
+
+| Rekomendasi | Perkiraan dampak |
+|---|---|
+| Clearance 22 SKU dead stock dengan diskon 30 sampai 50% | Kas masuk Rp 349 sampai 488 juta, sekali jalan |
+| Turunkan harga beli 25 SKU margin tipis sebesar 5% | +Rp 51,9 juta gross profit per tahun |
+| Naikkan revenue Medan ke level cabang Yogyakarta | +Rp 204,8 juta gross profit per tahun |
+| Naikkan repeat rate dari 38,2% ke 43,2% | +Rp 176,5 juta gross profit per tahun |
+
+Tiga rekomendasi yang berulang tiap tahun totalnya sekitar Rp 433 juta, atau 12%
+dari gross profit sekarang. Sepuluh temuan lengkap beserta asumsi, risiko, dan
+rekomendasinya ada di [docs/03_insight_report.md](docs/03_insight_report.md).
+
+## Arsitektur
 
 ```mermaid
 flowchart LR
@@ -56,95 +79,119 @@ flowchart LR
     G --> J["Insight Report"]
 ```
 
-Diagram lengkap: [docs/architecture.md](docs/architecture.md).
+Di akhir proses transformasi, pipeline membandingkan total net revenue di
+database transaksional dengan di data warehouse. Kalau ada selisih, berarti ada
+data yang hilang atau terduplikasi di tengah jalan. Hasil terakhir:
 
-## 🗄️ Database Schema
+```
+Rekonsiliasi net revenue: OLTP=9,280,562,435 vs DWH=9,280,562,435 (selisih 0)
+```
 
-- **OLTP (transaksional):** 11 tabel ternormalisasi — [ERD](docs/erd_oltp.md)
-- **Data Warehouse (star schema):** `fact_sales`, `fact_inventory` + 5 dimensi
-  konform — [Star Schema](docs/star_schema.md)
-- **Kamus data lengkap:** [docs/02_data_dictionary.md](docs/02_data_dictionary.md)
+Diagram lengkapnya ada di [docs/architecture.md](docs/architecture.md).
 
-## 🛠️ Tech Stack
+## Struktur database
 
-| Layer | Teknologi |
-|-------|-----------|
-| Bahasa | Python 3.10+, SQL |
-| Database | PostgreSQL (utama) · SQLite (fallback, zero-setup) |
-| Data & ETL | pandas, NumPy, Faker, SQLAlchemy |
-| Dashboard | Streamlit + Plotly (utama), Power BI (panduan) |
-| Dokumentasi | Markdown + Mermaid |
+- **Database transaksional:** 11 tabel yang sudah dinormalisasi. Lihat
+  [ERD](docs/erd_oltp.md).
+- **Data warehouse:** star schema dengan dua tabel fakta (`fact_sales` dan
+  `fact_inventory`) serta lima dimensi. Lihat [star schema](docs/star_schema.md).
+- **Kamus data:** [docs/02_data_dictionary.md](docs/02_data_dictionary.md).
 
-## 📈 Dashboard (6 Halaman)
+## Tools
 
-| Halaman | Isi |
-|---------|-----|
-| **Executive Overview** | KPI (revenue, profit, margin, AOV, repeat rate), tren bulanan, kontribusi kategori |
-| **Sales Performance** | Tren harian, channel, metode pembayaran, pola mingguan |
-| **Product & Category** | Best seller, margin tertinggi, Pareto kategori, analisis ukuran & warna |
-| **Inventory & Restock** | Nilai stok, low-stock alert, dead stock, rekomendasi restock |
-| **Customer Analysis** | Repeat rate, member tier, segmentasi RFM, demografi, top customer |
-| **Branch Performance** | Ranking cabang, channel mix, tren per cabang |
+Python 3.10 ke atas dan SQL. Database utamanya PostgreSQL, dengan SQLite sebagai
+pilihan default supaya proyek bisa dijalankan tanpa setup apa pun. ETL memakai
+pandas, NumPy, Faker, dan SQLAlchemy. Dashboard dibuat dengan Streamlit dan
+Plotly, dan ada panduan untuk membangun versi Power BI-nya. Dokumentasi ditulis
+dalam Markdown dengan diagram Mermaid.
 
-> 📸 Letakkan screenshot dashboard di [`assets/screenshots/`](assets/screenshots/).
-> _(Placeholder — jalankan dashboard lalu tangkap layar tiap halaman.)_
+## Dashboard
 
-## 💡 Key Insights (contoh dari data)
+Ada enam halaman, dan masing-masing ditutup dengan satu kotak insight. Empat
+halaman punya filter periode, cabang, dan channel di sidebar. Halaman inventori
+dan pelanggan menampilkan data keseluruhan tanpa filter.
 
-- Puncak penjualan di **Ramadan (Maret Rp 1,31 M)** & **Harbolnas (Des Rp 1,12 M)**.
-- Satu produk hero (**Rok Senja Label**) menyumbang ±9% revenue → risiko konsentrasi.
-- **Rp 411 juta** modal mengendap di **22 SKU dead stock**.
-- Cabang **Medan** tertinggal ~**6×** dari flagship Jakarta.
-- Channel **online sudah 51%** revenue dengan AOV setara/lebih tinggi dari offline.
+**Executive Overview** menampilkan KPI utama (revenue, gross profit, margin,
+nilai transaksi rata-rata, repeat rate), tren bulanan, dan kontribusi tiap
+kategori. Tampilannya ada di bagian atas README ini.
 
-10 insight + rekomendasi aksi: [docs/03_insight_report.md](docs/03_insight_report.md).
+**Sales Performance** menunjukkan tren harian, perbandingan channel, metode
+pembayaran, dan pola penjualan per hari dalam seminggu.
 
-## 🚀 How to Run
+![Halaman Sales Performance](assets/screenshots/02-sales-performance.png)
+
+**Product & Category** berisi produk terlaris, produk dengan margin tertinggi,
+analisis Pareto per kategori, serta penjualan per ukuran dan warna.
+
+![Halaman Product & Category](assets/screenshots/03-product-category.png)
+
+**Inventory & Restock** menampilkan nilai stok, produk yang hampir habis,
+dead stock, dan daftar prioritas restock.
+
+![Halaman Inventory & Restock](assets/screenshots/04-inventory-restock.png)
+
+**Customer Analysis** membahas repeat rate, tier member, segmentasi RFM
+sederhana, demografi, dan pelanggan teratas.
+
+![Halaman Customer Analysis](assets/screenshots/05-customer-analysis.png)
+
+**Branch Performance** membandingkan dan meranking keenam cabang, termasuk
+komposisi channel dan tren bulanan per cabang.
+
+![Halaman Branch Performance](assets/screenshots/06-branch-performance.png)
+
+## Cara menjalankan
+
+Seluruh pipeline selesai dalam sekitar 8 detik dan memakai SQLite, jadi tidak
+perlu menyiapkan database.
 
 ```bash
-# 1. Clone & masuk folder
-git clone <repo-url> && cd UMKM-BI-Platform
-
-# 2. (Opsional) buat virtual environment
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Jalankan ETL pipeline (default SQLite — tanpa setup DB apa pun)
 python etl/run_pipeline.py
-
-# 5. Jalankan dashboard
 streamlit run dashboard/streamlit_app.py
 ```
 
-**Pakai PostgreSQL?** Salin `.env.example` → `.env`, set `DB_ENGINE=postgres` dan isi
-kredensial, lalu ulangi langkah 4–5. Skema DDL tersedia di `sql/oltp/` & `sql/warehouse/`.
+Untuk memakai PostgreSQL, salin `.env.example` menjadi `.env`, isi
+`DB_ENGINE=postgres` beserta kredensialnya, lalu jalankan ulang dua perintah
+terakhir. Skema tabelnya ada di `sql/oltp/` dan `sql/warehouse/`.
 
-### Struktur Folder
+## Struktur folder
+
 ```
 UMKM-BI-Platform/
-├── docs/            # business case, data dictionary, insight, ERD, diagram
-├── sql/             # DDL OLTP, DDL warehouse, query analitik
-├── etl/             # generate → load → transform (run_pipeline.py)
-├── data/            # CSV mentah + database SQLite (generated)
-├── dashboard/       # Streamlit app (6 halaman) + panduan Power BI
-└── assets/          # screenshots
+├── docs/            # business case, kamus data, insight report, ERD, diagram
+├── sql/             # skema database transaksional, skema warehouse, query analitik
+├── etl/             # generate, load, dan transform (dijalankan lewat run_pipeline.py)
+├── data/            # CSV mentah dan database SQLite (dibuat saat pipeline jalan)
+├── dashboard/       # aplikasi Streamlit enam halaman dan panduan Power BI
+└── assets/          # screenshot dashboard
 ```
 
-## 🔮 Future Improvements
+## Keterbatasan
 
-- **SCD Type 2** pada `dim_product` / `dim_customer` untuk melacak perubahan harga & tier.
-- **Orkestrasi** dengan Apache Airflow / Dagster + penjadwalan incremental load.
-- **Data quality tests** (Great Expectations / dbt tests) dan migrasi transformasi ke **dbt**.
-- **Forecasting** permintaan (Prophet/ARIMA) untuk rekomendasi restock prediktif.
-- **Deploy** dashboard ke Streamlit Community Cloud + CI/CD.
+- **Datanya sintetis.** Semua transaksi dibangkitkan dengan Faker memakai seed
+  tetap, jadi angkanya selalu sama setiap kali pipeline dijalankan. Pola seperti
+  puncak Ramadan memang dirancang di generator. Proyek ini menunjukkan cara
+  menganalisis, bukan kondisi toko yang sebenarnya.
+- **Tidak ada biaya operasional cabang**, jadi analisis berhenti di gross profit
+  dan profitabilitas per cabang belum bisa dinilai.
+- **Sekitar 10% revenue berasal dari pembeli non-member**, sehingga analisis
+  tier, usia, dan repeat rate hanya mencakup member.
+- **Tidak ada data stok habis**, jadi penjualan yang hilang karena kehabisan
+  barang tidak bisa dihitung.
 
----
+## Rencana pengembangan
 
-## 👤 Author
+- Menerapkan SCD Type 2 di `dim_product` dan `dim_customer` untuk melacak
+  perubahan harga dan tier.
+- Menjadwalkan pipeline dengan Airflow atau Dagster, dengan incremental load.
+- Menambahkan tes kualitas data dengan Great Expectations atau dbt.
+- Membuat forecasting permintaan dengan Prophet atau ARIMA untuk rekomendasi
+  restock.
+- Men-deploy dashboard ke Streamlit Community Cloud.
 
-**Marco Alexander** — Information Systems (Business Intelligence).
-Portofolio ini menunjukkan kemampuan *end-to-end BI*: business analysis, data modeling,
-data warehousing, ETL, SQL analytics, dan data visualization.
-"# UMKM-BI-Platform" 
+## Tentang saya
+
+Marco Alexander, mahasiswa Sistem Informasi di BINUS University dengan fokus
+Business Intelligence.
+[linkedin.com/in/marcolex](https://linkedin.com/in/marcolex)

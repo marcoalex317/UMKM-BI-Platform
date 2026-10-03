@@ -46,5 +46,5 @@ Seluruh pipeline dijalankan dengan satu perintah:
 ```bash
 python etl/run_pipeline.py
 ```
-yang menjalankan `generate_data` → `load_oltp` → `transform_dwh` secara berurutan,
+yang menjalankan `generate_data`, `load_oltp`, lalu `transform_dwh` secara berurutan,
 lengkap dengan log jumlah baris dan **rekonsiliasi revenue OLTP vs DWH**.

@@ -28,13 +28,13 @@ Dokumentasi seluruh tabel pada dua layer: **OLTP** (transaksional) dan **DWH** (
 | product_id | INT (PK) | ID produk / SKU |
 | sku | VARCHAR (unique) | Kode SKU |
 | product_name | VARCHAR | Nama produk |
-| category_id | INT (FK) | → categories |
+| category_id | INT (FK) | Relasi ke categories |
 | brand | VARCHAR | Brand lokal |
 | size | VARCHAR | Ukuran (S/M/L/XL/All Size) |
 | color | VARCHAR | Warna |
 | cost_price | NUMERIC | Harga modal (Rp) |
 | sell_price | NUMERIC | Harga jual (Rp) |
-| supplier_id | INT (FK) | → suppliers |
+| supplier_id | INT (FK) | Relasi ke suppliers |
 | is_active | BOOLEAN | Status aktif |
 
 ### `stores`
@@ -61,8 +61,8 @@ Dokumentasi seluruh tabel pada dua layer: **OLTP** (transaksional) dan **DWH** (
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
 | transaction_id | INT (PK) | ID transaksi |
-| store_id | INT (FK) | → stores |
-| customer_id | INT (FK, nullable) | → customers (NULL = guest) |
+| store_id | INT (FK) | Relasi ke stores |
+| customer_id | INT (FK, nullable) | Relasi ke customers (NULL = guest) |
 | channel | VARCHAR | offline / shopee / tokopedia / instagram |
 | transaction_date | DATE | Tanggal transaksi |
 | payment_method | VARCHAR | Metode bayar |
@@ -73,8 +73,8 @@ Dokumentasi seluruh tabel pada dua layer: **OLTP** (transaksional) dan **DWH** (
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
 | detail_id | INT (PK) | ID baris |
-| transaction_id | INT (FK) | → sales_transactions |
-| product_id | INT (FK) | → products |
+| transaction_id | INT (FK) | Relasi ke sales_transactions |
+| product_id | INT (FK) | Relasi ke products |
 | quantity | INT | Jumlah unit |
 | unit_price | NUMERIC | Harga jual saat transaksi |
 | unit_cost | NUMERIC | Harga modal saat transaksi |

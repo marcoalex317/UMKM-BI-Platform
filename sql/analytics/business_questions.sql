@@ -1,6 +1,6 @@
 -- =============================================================================
--- ANALYTICS QUERIES — Menjawab pertanyaan bisnis UMKM
--- Sumber: Data Warehouse (star schema) — fact_sales, fact_inventory, dim_*
+-- ANALYTICS QUERIES - Menjawab pertanyaan bisnis UMKM
+-- Sumber: Data Warehouse (star schema) - fact_sales, fact_inventory, dim_*
 -- =============================================================================
 -- Query ditulis kompatibel SQLite & PostgreSQL (fungsi standar).
 -- Untuk PostgreSQL, ganti tidak perlu; untuk perhitungan tanggal SQLite dipakai
@@ -208,7 +208,7 @@ ORDER BY revenue DESC;
 
 
 -- -----------------------------------------------------------------------------
--- Q10. STOCK TURNOVER per produk (COGS / rata-rata stok) — indikator perputaran
+-- Q10. STOCK TURNOVER per produk (COGS / rata-rata stok) - indikator perputaran
 -- -----------------------------------------------------------------------------
 WITH cogs AS (
     SELECT product_key, SUM(cost) AS total_cogs

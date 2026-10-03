@@ -1,4 +1,4 @@
-"""Halaman 1 — Executive Overview: KPI utama untuk owner UMKM."""
+"""Halaman 1 - Executive Overview: KPI utama untuk owner UMKM."""
 import sys
 from pathlib import Path
 

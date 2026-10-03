@@ -1,4 +1,4 @@
-# Star Schema — Data Warehouse
+# Star Schema: Data Warehouse
 
 Model dimensional (Kimball) untuk analitik. Dua fact table berbagi dimensi (*conformed
 dimensions*): `dim_date`, `dim_product`, `dim_store`.
@@ -82,7 +82,7 @@ erDiagram
 
 ## Alasan Desain
 
-- **Star (bukan snowflake):** dimensi didenormalisasi → join minimal, query agregasi cepat,
+- **Star (bukan snowflake):** dimensi didenormalisasi sehingga join minimal, query agregasi cepat,
   dan mudah dipahami analis/owner non-teknis.
 - **Grain `fact_sales` = line item:** memungkinkan agregasi fleksibel ke level produk,
   kategori, brand, ukuran/warna, cabang, channel, pelanggan, dan waktu tanpa kehilangan detail.
@@ -90,7 +90,7 @@ erDiagram
   kumulatif, *stock turnover*, dan deteksi *dead stock*.
 - **Surrogate key (`*_key`):** memisahkan warehouse dari natural key OLTP, mempermudah
   penerapan **SCD (Slowly Changing Dimension)** di masa depan.
-- **Conformed dimensions:** `dim_date`, `dim_product`, `dim_store` dipakai kedua fact →
+- **Conformed dimensions:** `dim_date`, `dim_product`, `dim_store` dipakai kedua fact, sehingga
   analisis lintas proses (penjualan vs stok) konsisten.
 - **Degenerate dimension** `transaction_id` disimpan di fact untuk analisis level keranjang
   (jumlah item per transaksi, AOV).

@@ -1,4 +1,4 @@
-# Business Case — BI Platform untuk UMKM Fashion "Rumah Mode Nusantara"
+# Business Case: BI Platform untuk UMKM Fashion "Rumah Mode Nusantara"
 
 ## 1. Latar Belakang Masalah
 
@@ -9,7 +9,7 @@ menghadapi masalah klasik:
 | Masalah | Dampak Bisnis |
 |---------|---------------|
 | Tidak tahu produk mana yang benar-benar menghasilkan **profit** (bukan sekadar laku) | Modal habis di produk margin tipis |
-| **Stok tidak seimbang** — produk laris cepat habis, produk lain menumpuk | Kehilangan penjualan + modal mengendap (*dead stock*) |
+| **Stok tidak seimbang**: produk laris cepat habis, produk lain menumpuk | Kehilangan penjualan + modal mengendap (*dead stock*) |
 | Tidak ada visibilitas performa **antar cabang & channel** | Cabang/channel rugi dibiarkan berjalan |
 | Tidak paham perilaku **pelanggan** (repeat vs one-time) | Budget promosi tidak tepat sasaran |
 | Keputusan restock berdasarkan "feeling" | Over/under-stock, cash flow terganggu |
@@ -43,7 +43,7 @@ yang bisa langsung dipakai owner untuk keputusan penjualan, stok, dan pemasaran.
 
 ## 4. Scope Data
 
-- **Periode:** 12 bulan (Juli 2025 – Juni 2026)
+- **Periode:** 12 bulan (Juli 2025 sampai Juni 2026)
 - **Cabang:** 6 toko di Jakarta, Bandung, Surabaya, Yogyakarta, Medan, Semarang
 - **Channel:** Offline (toko fisik), Shopee, Tokopedia, Instagram
 - **Volume:** ±20.000 transaksi, ±180 SKU, ±12.000 pelanggan
