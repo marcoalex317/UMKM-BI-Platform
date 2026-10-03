@@ -4,7 +4,7 @@ Proyek ini saya buat untuk mempraktikkan alur kerja BI dari awal sampai akhir
 pada sebuah chain fashion UMKM fiktif bernama **Rumah Mode Nusantara**. Saya
 merancang database transaksional, membangun data warehouse dengan star schema,
 menulis ETL pipeline di Python, menjawab pertanyaan bisnis dengan SQL, lalu
-menyajikannya dalam dashboard Streamlit enam halaman.
+menyajikannya dalam dashboard Streamlit tujuh halaman.
 
 Datanya saya bangkitkan sendiri dengan Faker, lengkap dengan atribut khas fashion
 (ukuran, warna, brand) dan pola musim belanja Indonesia seperti Ramadan, Lebaran,
@@ -107,38 +107,56 @@ dalam Markdown dengan diagram Mermaid.
 
 ## Dashboard
 
-Ada enam halaman, dan masing-masing ditutup dengan satu kotak insight. Empat
-halaman punya filter periode, cabang, dan channel di sidebar. Halaman inventori
-dan pelanggan menampilkan data keseluruhan tanpa filter.
+Dashboard-nya saya buat di Streamlit dengan tema navy gelap, dan saya susun
+seperti dashboard kerja sungguhan: KPI di atas, grafik yang menjawab satu
+pertanyaan per bagian, lalu catatan analis di bawah setiap halaman. Angka di
+catatan itu dihitung ulang setiap kali filter berubah, jadi tidak ditulis manual.
 
-**Executive Overview** menampilkan KPI utama (revenue, gross profit, margin,
-nilai transaksi rata-rata, repeat rate), tren bulanan, dan kontribusi tiap
-kategori. Tampilannya ada di bagian atas README ini.
+Menunya dibagi tiga: Ringkasan, Analisis, dan Referensi. Filter periode, cabang,
+dan channel ada di sidebar dan tetap tersimpan saat pindah halaman. Halaman
+Inventori dan Pelanggan sengaja menampilkan kondisi keseluruhan, jadi filternya
+dinonaktifkan di sana.
 
-**Sales Performance** menunjukkan tren harian, perbandingan channel, metode
-pembayaran, dan pola penjualan per hari dalam seminggu.
+**Executive Overview** berisi lima KPI utama (revenue, gross profit, rata-rata
+transaksi, repeat rate, porsi online), tren bulanan dengan penanda Ramadan dan
+Harbolnas, serta revenue per kategori, channel, cabang, dan produk. Tampilannya
+ada di bagian atas README ini.
+
+**Sales Performance** menunjukkan revenue harian dengan rata-rata 7 hari, tren
+bulanan per channel, ringkasan per channel, metode pembayaran, dan perbandingan
+akhir pekan dengan hari kerja.
 
 ![Halaman Sales Performance](assets/screenshots/02-sales-performance.png)
 
-**Product & Category** berisi produk terlaris, produk dengan margin tertinggi,
-analisis Pareto per kategori, serta penjualan per ukuran dan warna.
+**Produk & Kategori** memetakan setiap SKU berdasarkan revenue dan margin riil,
+sehingga produk yang laris tapi bermargin tipis langsung terlihat. Ada juga
+porsi kumulatif per kategori, sepuluh produk teratas, serta penjualan per ukuran
+dan warna.
 
-![Halaman Product & Category](assets/screenshots/03-product-category.png)
+![Halaman Produk & Kategori](assets/screenshots/03-product-category.png)
 
-**Inventory & Restock** menampilkan nilai stok, produk yang hampir habis,
-dead stock, dan daftar prioritas restock.
+**Inventori & Restock** menampilkan nilai stok, daftar prioritas restock dengan
+status Urgent, Segera, atau Aman, dan dead stock beserta modal yang tertahan.
 
-![Halaman Inventory & Restock](assets/screenshots/04-inventory-restock.png)
+![Halaman Inventori & Restock](assets/screenshots/04-inventory-restock.png)
 
-**Customer Analysis** membahas repeat rate, tier member, segmentasi RFM
-sederhana, demografi, dan pelanggan teratas.
+**Pelanggan** membahas frekuensi belanja member, selisih nilai pelanggan repeat
+dan yang sekali belanja, perbandingan tier, segmen, dan kelompok usia. ID member
+ditampilkan tanpa nama.
 
-![Halaman Customer Analysis](assets/screenshots/05-customer-analysis.png)
+![Halaman Pelanggan](assets/screenshots/05-customer-analysis.png)
 
-**Branch Performance** membandingkan dan meranking keenam cabang, termasuk
-komposisi channel dan tren bulanan per cabang.
+**Kinerja Cabang** berisi ranking keenam cabang, komposisi channel per cabang,
+dan tren bulanan. Satu cabang bisa dipilih untuk disorot, sementara cabang lain
+tampil samar.
 
-![Halaman Branch Performance](assets/screenshots/06-branch-performance.png)
+![Halaman Kinerja Cabang](assets/screenshots/06-branch-performance.png)
+
+**Definisi & Catatan Data** adalah halaman referensi. Isinya pemeriksaan
+rekonsiliasi revenue, diagram star schema, definisi setiap metrik, batas yang
+saya pakai (misalnya dead stock dan margin tipis), dan keterbatasan data.
+
+![Halaman Definisi & Catatan Data](assets/screenshots/07-catatan-data.png)
 
 ## Cara menjalankan
 
@@ -163,7 +181,7 @@ UMKM-BI-Platform/
 ├── sql/             # skema database transaksional, skema warehouse, query analitik
 ├── etl/             # generate, load, dan transform (dijalankan lewat run_pipeline.py)
 ├── data/            # CSV mentah dan database SQLite (dibuat saat pipeline jalan)
-├── dashboard/       # aplikasi Streamlit enam halaman dan panduan Power BI
+├── dashboard/       # aplikasi Streamlit tujuh halaman dan panduan Power BI
 └── assets/          # screenshot dashboard
 ```
 

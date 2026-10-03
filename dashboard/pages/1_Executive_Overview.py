@@ -1,127 +1,152 @@
-"""Halaman 1 - Executive Overview: KPI utama untuk owner UMKM."""
+"""Executive Overview: gambaran besar penjualan untuk pemilik toko."""
 import sys
 from pathlib import Path
 
-import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from utils.db import run_query, sidebar_filters, rupiah  # noqa: E402
+from utils.db import get_filters, run_query  # noqa: E402
+from utils import theme as t  # noqa: E402
 
-st.set_page_config(page_title="Executive Overview", page_icon="📈", layout="wide")
-st.title("📈 Executive Overview")
-
-f = sidebar_filters("exec")
+f = get_filters()
 where = f["where"]
+JOIN = """FROM fact_sales f
+    JOIN dim_store s ON f.store_key = s.store_key
+    JOIN dim_date d ON f.date_key = d.date_key"""
 
-# --- KPI cards ---
+t.page_header(
+    "Executive Overview",
+    "Ringkasan penjualan, profit, dan sumber revenue Rumah Mode Nusantara.",
+    t.filter_meta(f))
+
 kpi = run_query(f"""
     SELECT SUM(f.net_revenue) AS revenue,
            SUM(f.gross_profit) AS profit,
            COUNT(DISTINCT f.transaction_id) AS n_trx,
-           SUM(f.quantity) AS qty,
-           COUNT(DISTINCT f.customer_key) AS n_cust
-    FROM fact_sales f
-    JOIN dim_store s ON f.store_key = s.store_key
-    JOIN dim_date d ON f.date_key = d.date_key
-    {where}
+           SUM(CASE WHEN f.channel <> 'offline' THEN f.net_revenue ELSE 0 END) AS online
+    {JOIN} {where}
 """).iloc[0]
+if not kpi["revenue"]:
+    t.empty_state()
 
-revenue = kpi["revenue"] or 0
-profit = kpi["profit"] or 0
-n_trx = int(kpi["n_trx"] or 0)
-margin = (profit / revenue * 100) if revenue else 0
-aov = (revenue / n_trx) if n_trx else 0
+revenue, profit, n_trx = float(kpi["revenue"]), float(kpi["profit"]), int(kpi["n_trx"])
+margin = profit / revenue * 100
+aov = revenue / n_trx
+online_share = float(kpi["online"]) / revenue * 100
 
-# repeat rate
 rr = run_query(f"""
     WITH per_cust AS (
         SELECT f.customer_key, COUNT(DISTINCT f.transaction_id) AS n
-        FROM fact_sales f
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key
-        {where} {'AND' if where else 'WHERE'} f.customer_key IS NOT NULL
+        {JOIN} {where} {'AND' if where else 'WHERE'} f.customer_key IS NOT NULL
         GROUP BY f.customer_key
     )
-    SELECT ROUND(100.0 * SUM(CASE WHEN n>1 THEN 1 ELSE 0 END)/COUNT(*),1) AS rate
+    SELECT COUNT(*) AS members,
+           100.0 * SUM(CASE WHEN n > 1 THEN 1 ELSE 0 END) / COUNT(*) AS rate
     FROM per_cust
-""").iloc[0]["rate"]
+""").iloc[0]
 
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Revenue", rupiah(revenue))
-c2.metric("Gross Profit", rupiah(profit))
-c3.metric("Margin", f"{margin:.1f}%")
-c4.metric("Avg Order Value", rupiah(aov))
-c5.metric("Repeat Rate", f"{rr or 0:.1f}%")
+t.kpi_cards([
+    ("Revenue", t.rp(revenue), f"{t.num(n_trx)} transaksi"),
+    ("Gross profit", t.rp(profit), f"margin {t.pct(margin)}"),
+    ("Rata-rata transaksi", t.rp(aov), "nilai per struk"),
+    ("Repeat rate", t.pct(rr["rate"] or 0), f"dari {t.num(rr['members'] or 0)} member"),
+    ("Porsi online", t.pct(online_share), "dari 3 channel online"),
+])
 
-st.divider()
+# --- Tren bulanan -----------------------------------------------------------
+trend = run_query(f"""
+    SELECT d.year, d.month, SUM(f.net_revenue) AS revenue, SUM(f.gross_profit) AS profit
+    {JOIN} {where}
+    GROUP BY d.year, d.month ORDER BY d.year, d.month
+""")
+trend["label"] = [f"{t.BULAN[m-1]} {str(y)[2:]}" for y, m in zip(trend["year"], trend["month"])]
 
-# --- Tren revenue bulanan ---
-col1, col2 = st.columns([2, 1])
-with col1:
-    st.subheader("Tren Revenue & Profit Bulanan")
-    trend = run_query(f"""
-        SELECT d.year, d.month, d.month_name,
-               SUM(f.net_revenue) AS revenue, SUM(f.gross_profit) AS profit
-        FROM fact_sales f
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key
-        {where}
-        GROUP BY d.year, d.month, d.month_name
-        ORDER BY d.year, d.month
-    """)
-    trend["periode"] = trend["month_name"].str[:3] + " " + trend["year"].astype(str)
-    fig = px.line(trend, x="periode", y=["revenue", "profit"], markers=True,
-                  labels={"value": "Rupiah", "periode": "", "variable": ""})
-    fig.update_layout(legend_title="", height=380)
-    st.plotly_chart(fig, width='stretch')
+t.section("Revenue dan gross profit per bulan",
+          "Bulan dengan event belanja besar diberi label di atas titiknya.")
+fig = go.Figure()
+for col, name, color in [("revenue", "Revenue", t.SERIES[0]), ("profit", "Gross profit", t.SERIES[2])]:
+    fig.add_trace(go.Scatter(
+        x=trend["label"], y=trend[col] / 1e6, name=name, mode="lines+markers",
+        line=dict(color=color), marker=dict(size=8, color=color, line=dict(width=2, color=t.BG)),
+        hovertemplate="%{x}<br>" + name + ": Rp %{y:,.1f} jt<extra></extra>"))
+EVENTS = {3: "Ramadan", 4: "Lebaran", 11: "Harbolnas 11.11", 12: "Harbolnas 12.12"}
+for _, r in trend.nlargest(3, "revenue").iterrows():
+    if r["month"] in EVENTS:
+        fig.add_annotation(x=r["label"], y=r["revenue"] / 1e6, text=EVENTS[r["month"]],
+                           showarrow=False, yshift=18, font=dict(color=t.TEXT_2, size=11))
+fig.update_yaxes(title_text="Rp juta", rangemode="tozero")
+fig.update_xaxes(gridcolor="rgba(0,0,0,0)")
+t.chart(t.style(fig, height=340))
+t.source("Revenue bersih setelah diskon. Gross profit = revenue dikurangi harga pokok.")
 
-with col2:
-    st.subheader("Kontribusi Kategori")
+# --- Kategori dan channel ---------------------------------------------------
+c1, c2 = st.columns(2, gap="large")
+with c1:
     cat = run_query(f"""
-        SELECT p.parent_category AS kategori, SUM(f.net_revenue) AS revenue
-        FROM fact_sales f
-        JOIN dim_product p ON f.product_key = p.product_key
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key
-        {where}
-        GROUP BY p.parent_category
-        ORDER BY revenue DESC
+        SELECT p.parent_category AS k, SUM(f.net_revenue) AS revenue,
+               100.0 * SUM(f.gross_profit) / SUM(f.net_revenue) AS margin
+        {JOIN} JOIN dim_product p ON f.product_key = p.product_key {where}
+        GROUP BY p.parent_category ORDER BY revenue DESC
     """)
-    fig2 = px.pie(cat, names="kategori", values="revenue", hole=0.45)
-    fig2.update_layout(height=380)
-    st.plotly_chart(fig2, width='stretch')
-
-# --- Revenue per channel & cabang ---
-col3, col4 = st.columns(2)
-with col3:
-    st.subheader("Revenue per Channel")
+    share = cat["revenue"] / cat["revenue"].sum() * 100
+    t.section("Revenue per kategori", "Label menunjukkan porsi terhadap total revenue.")
+    t.chart(t.bar_h(cat["k"], cat["revenue"] / 1e6,
+                    text=[t.pct(s) for s in share],
+                    hover=[f"{k}<br>{t.rp(v)} ({t.pct(s)})<br>Margin {t.pct(m)}"
+                           for k, v, s, m in zip(cat["k"], cat["revenue"], share, cat["margin"])]))
+with c2:
     ch = run_query(f"""
-        SELECT f.channel, SUM(f.net_revenue) AS revenue
-        FROM fact_sales f
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key
-        {where}
+        SELECT f.channel AS k, SUM(f.net_revenue) AS revenue,
+               COUNT(DISTINCT f.transaction_id) AS n
+        {JOIN} {where}
         GROUP BY f.channel ORDER BY revenue DESC
     """)
-    st.plotly_chart(px.bar(ch, x="channel", y="revenue",
-                           color="channel").update_layout(showlegend=False, height=320),
-                    width='stretch')
-with col4:
-    st.subheader("Revenue per Cabang")
+    chs = ch["revenue"] / ch["revenue"].sum() * 100
+    t.section("Revenue per channel", "Label menunjukkan porsi terhadap total revenue.")
+    t.chart(t.bar_h(ch["k"].str.capitalize(), ch["revenue"] / 1e6,
+                    text=[t.pct(s) for s in chs],
+                    hover=[f"{k.capitalize()}<br>{t.rp(v)} ({t.pct(s)})<br>{t.num(n)} transaksi"
+                           for k, v, s, n in zip(ch["k"], ch["revenue"], chs, ch["n"])]))
+
+# --- Cabang dan produk ------------------------------------------------------
+c3, c4 = st.columns(2, gap="large")
+with c3:
     br = run_query(f"""
-        SELECT s.store_name, SUM(f.net_revenue) AS revenue
-        FROM fact_sales f
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key
-        {where}
+        SELECT s.store_name AS k, SUM(f.net_revenue) AS revenue
+        {JOIN} {where}
         GROUP BY s.store_name ORDER BY revenue DESC
     """)
-    st.plotly_chart(px.bar(br, x="revenue", y="store_name", orientation="h",
-                           color="revenue", color_continuous_scale="Blues")
-                    .update_layout(height=320, yaxis={"categoryorder": "total ascending"}),
-                    width='stretch')
+    t.section("Revenue per cabang", "Jakarta Pusat adalah toko flagship, cabang lain bertipe reguler.")
+    t.chart(t.bar_h(br["k"].str.replace("RMN ", ""), br["revenue"] / 1e6,
+                    text=[t.rp(v) for v in br["revenue"]],
+                    hover=[f"{k}<br>{t.rp_full(v)}" for k, v in zip(br["k"], br["revenue"])],
+                    label_room=0.38))
+with c4:
+    top = run_query(f"""
+        SELECT p.product_name AS k, SUM(f.net_revenue) AS revenue, SUM(f.quantity) AS qty
+        {JOIN} JOIN dim_product p ON f.product_key = p.product_key {where}
+        GROUP BY p.product_name ORDER BY revenue DESC LIMIT 6
+    """)
+    t.section("Enam produk dengan revenue terbesar")
+    t.chart(t.bar_h(top["k"], top["revenue"] / 1e6,
+                    text=[t.rp(v) for v in top["revenue"]],
+                    hover=[f"{k}<br>{t.rp_full(v)}<br>{t.num(q)} unit"
+                           for k, v, q in zip(top["k"], top["revenue"], top["qty"])],
+                    label_room=0.38))
 
-st.success(f"💡 **Insight:** Margin rata-rata **{margin:.1f}%** dengan repeat rate "
-           f"**{rr or 0:.1f}%**. Fokuskan promosi pada bulan puncak (Ramadan & Harbolnas) "
-           f"dan kategori kontributor revenue terbesar.")
+# --- Catatan ----------------------------------------------------------------
+peak = trend.loc[trend["revenue"].idxmax()]
+others = trend.loc[trend.index != trend["revenue"].idxmax(), "revenue"].mean()
+points = [
+    f"Bulan terbaik adalah <b>{t.BULAN[int(peak['month'])-1]} {int(peak['year'])}</b> "
+    f"({t.rp(peak['revenue'])})" + (f", sekitar <b>{peak['revenue']/others:.1f}x</b> rata-rata bulan lain.".replace(".", ",", 1)
+                                    if len(trend) > 1 and others else "."),
+    f"Kategori <b>{cat.iloc[0]['k']}</b> menyumbang <b>{t.pct(share.iloc[0])}</b> revenue "
+    f"dengan margin {t.pct(cat.iloc[0]['margin'])}.",
+    f"Channel online menyumbang <b>{t.pct(online_share)}</b> revenue.",
+]
+if len(br) > 1:
+    points.append(f"<b>{br.iloc[0]['k']}</b> memimpin dengan {t.rp(br.iloc[0]['revenue'])}, "
+                  f"sedangkan <b>{br.iloc[-1]['k']}</b> paling rendah di {t.rp(br.iloc[-1]['revenue'])}.")
+t.note(points)

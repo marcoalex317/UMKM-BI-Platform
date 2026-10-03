@@ -1,105 +1,151 @@
-"""Halaman 3 - Product & Category Analysis: best seller, margin, size/warna."""
+"""Produk & Kategori: produk laris, margin riil, Pareto kategori, ukuran dan warna."""
 import sys
 from pathlib import Path
 
-import plotly.express as px
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from utils.db import run_query, sidebar_filters, rupiah  # noqa: E402
+from utils.db import get_filters, run_query  # noqa: E402
+from utils import theme as t  # noqa: E402
 
-st.set_page_config(page_title="Product & Category", page_icon="👕", layout="wide")
-st.title("👕 Product & Category Analysis")
-
-f = sidebar_filters("prod")
+f = get_filters()
 where = f["where"]
-
-# --- Best sellers ---
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader("🏆 Top 10 Produk Terlaris (unit)")
-    top = run_query(f"""
-        SELECT p.product_name, p.category, SUM(f.quantity) AS qty,
-               SUM(f.net_revenue) AS revenue
-        FROM fact_sales f
-        JOIN dim_product p ON f.product_key = p.product_key
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key {where}
-        GROUP BY p.product_name, p.category
-        ORDER BY qty DESC LIMIT 10
-    """)
-    st.plotly_chart(px.bar(top, x="qty", y="product_name", orientation="h",
-                           color="qty", color_continuous_scale="Greens",
-                           labels={"qty": "Unit", "product_name": ""})
-                    .update_layout(height=380, yaxis={"categoryorder": "total ascending"}),
-                    width='stretch')
-with col2:
-    st.subheader("💰 Top 10 Produk Margin Tertinggi")
-    marg = run_query(f"""
-        SELECT p.product_name, p.margin_pct, SUM(f.gross_profit) AS profit
-        FROM fact_sales f
-        JOIN dim_product p ON f.product_key = p.product_key
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key {where}
-        GROUP BY p.product_name, p.margin_pct
-        HAVING SUM(f.quantity) > 0
-        ORDER BY p.margin_pct DESC LIMIT 10
-    """)
-    st.plotly_chart(px.bar(marg, x="margin_pct", y="product_name", orientation="h",
-                           color="margin_pct", color_continuous_scale="Purples",
-                           labels={"margin_pct": "Margin %", "product_name": ""})
-                    .update_layout(height=380, yaxis={"categoryorder": "total ascending"}),
-                    width='stretch')
-
-st.divider()
-
-# --- Pareto kategori ---
-st.subheader("Analisis Kategori (Pareto 80/20)")
-cat = run_query(f"""
-    SELECT p.category, SUM(f.net_revenue) AS revenue, SUM(f.gross_profit) AS profit
-    FROM fact_sales f
+JOIN = """FROM fact_sales f
     JOIN dim_product p ON f.product_key = p.product_key
     JOIN dim_store s ON f.store_key = s.store_key
-    JOIN dim_date d ON f.date_key = d.date_key {where}
-    GROUP BY p.category ORDER BY revenue DESC
+    JOIN dim_date d ON f.date_key = d.date_key"""
+THIN = 25  # batas margin harga jual (%) untuk menandai produk bermargin tipis
+
+t.page_header(
+    "Produk & Kategori",
+    "Produk mana yang mendatangkan uang, mana yang laris tapi hampir tidak menghasilkan untung.",
+    t.filter_meta(f))
+
+sku = run_query(f"""
+    SELECT p.product_key, p.product_name, p.size, p.category, p.margin_pct AS list_margin,
+           SUM(f.quantity) AS qty, SUM(f.net_revenue) AS revenue,
+           SUM(f.gross_profit) AS profit
+    {JOIN} {where}
+    GROUP BY p.product_key, p.product_name, p.size, p.category, p.margin_pct
+    ORDER BY revenue DESC
 """)
-cat["cum_pct"] = cat["revenue"].cumsum() / cat["revenue"].sum() * 100
-fig = px.bar(cat, x="category", y="revenue", labels={"category": "", "revenue": "Revenue"})
-fig.add_scatter(x=cat["category"], y=cat["cum_pct"] / 100 * cat["revenue"].max(),
-                mode="lines+markers", name="Kumulatif %", yaxis="y")
-fig.update_layout(height=360, showlegend=False)
-st.plotly_chart(fig, width='stretch')
+if sku.empty:
+    t.empty_state()
 
-# --- Size & color analysis (khas fashion) ---
-col3, col4 = st.columns(2)
-with col3:
-    st.subheader("Penjualan per Ukuran")
-    size = run_query(f"""
-        SELECT p.size, SUM(f.quantity) AS qty
-        FROM fact_sales f
-        JOIN dim_product p ON f.product_key = p.product_key
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key {where}
-        GROUP BY p.size ORDER BY qty DESC
-    """)
-    st.plotly_chart(px.bar(size, x="size", y="qty", color="size")
-                    .update_layout(showlegend=False, height=300), width='stretch')
-with col4:
-    st.subheader("Penjualan per Warna")
-    color = run_query(f"""
-        SELECT p.color, SUM(f.quantity) AS qty
-        FROM fact_sales f
-        JOIN dim_product p ON f.product_key = p.product_key
-        JOIN dim_store s ON f.store_key = s.store_key
-        JOIN dim_date d ON f.date_key = d.date_key {where}
-        GROUP BY p.color ORDER BY qty DESC LIMIT 10
-    """)
-    st.plotly_chart(px.bar(color, x="qty", y="color", orientation="h", color="qty",
-                           color_continuous_scale="Oranges", labels={"color": "", "qty": "Unit"})
-                    .update_layout(height=300, yaxis={"categoryorder": "total ascending"}),
-                    width='stretch')
+sku["margin"] = sku["profit"] / sku["revenue"] * 100
+sku["label"] = sku["product_name"] + " (" + sku["size"] + ")"
+# Satu nama produk bisa punya beberapa SKU (ukuran berbeda). Untuk ranking produk
+# semua ukuran digabung, sama seperti di Executive Overview.
+prod = (sku.groupby(["product_name", "category"], as_index=False)[["qty", "revenue", "profit"]].sum()
+           .sort_values("revenue", ascending=False))
+prod["margin"] = prod["profit"] / prod["revenue"] * 100
+tot_rev, tot_gp = sku["revenue"].sum(), sku["profit"].sum()
+thin = sku[sku["list_margin"] < THIN]
+top10_share = prod["revenue"].head(10).sum() / tot_rev * 100
 
-top_name = top.iloc[0]["product_name"] if len(top) else "-"
-st.success(f"💡 **Insight:** Produk terlaris **{top_name}**. Ukuran & warna terlaris "
-           f"perlu diprioritaskan saat restock. Produk margin tinggi bisa didorong lewat "
-           f"bundling dengan best-seller untuk mengangkat profit total.")
+t.kpi_cards([
+    ("SKU terjual", t.num(len(sku)), f"dari {t.num(sku['category'].nunique())} kategori"),
+    ("Porsi 10 produk teratas", t.pct(top10_share), "dari total revenue"),
+    ("Produk nomor satu", t.pct(prod.iloc[0]["revenue"] / tot_rev * 100), "porsi revenue satu produk"),
+    ("Margin riil rata-rata", t.pct(tot_gp / tot_rev * 100), "setelah diskon"),
+    ("SKU margin tipis", t.num(len(thin)), f"margin jual di bawah {THIN}%"),
+])
+
+# --- Revenue vs margin ------------------------------------------------------
+t.section("Revenue dan margin riil per SKU",
+          f"Setiap titik satu SKU. Titik oranye adalah SKU dengan margin harga jual di bawah {THIN}%. "
+          "Garis putus-putus menunjukkan margin riil rata-rata.")
+avg_m = tot_gp / tot_rev * 100
+fig = go.Figure()
+for mask, name, color, size in [(sku["list_margin"] >= THIN, "SKU lain", t.ACCENT, 9),
+                                (sku["list_margin"] < THIN, f"Margin tipis (< {THIN}%)", t.SERIES[1], 10)]:
+    sub = sku[mask]
+    fig.add_trace(go.Scatter(
+        x=sub["revenue"] / 1e6, y=sub["margin"], mode="markers", name=name,
+        marker=dict(size=size, color=color, opacity=0.85, line=dict(width=1.5, color=t.BG)),
+        text=sub["label"],
+        customdata=np.stack([sub["category"], sub["qty"], sub["list_margin"]], axis=-1),
+        hovertemplate="<b>%{text}</b><br>%{customdata[0]}<br>Revenue Rp %{x:,.1f} jt"
+                      "<br>Margin riil %{y:.1f}%<br>Margin harga jual %{customdata[2]:.1f}%"
+                      "<br>%{customdata[1]:,} unit<extra></extra>"))
+fig.add_hline(y=avg_m, line=dict(color=t.MUTED, width=1, dash="dot"))
+fig.add_annotation(x=0.5, xref="paper", y=avg_m, text=f"rata-rata {t.pct(avg_m)}",
+                   showarrow=False, xanchor="center", yshift=10, font=dict(color=t.MUTED, size=11))
+fig.update_xaxes(title_text="Revenue (Rp juta)", rangemode="tozero")
+fig.update_yaxes(title_text="Margin riil (%)", rangemode="tozero")
+t.chart(t.style(fig, height=380))
+t.source("Margin riil = gross profit dibagi revenue setelah diskon. "
+         "Margin harga jual = selisih harga jual dan harga pokok sebelum diskon.")
+
+# --- Pareto kategori dan tabel produk ---------------------------------------
+c1, c2 = st.columns([0.9, 1.3], gap="large")
+with c1:
+    cat = (sku.groupby("category", as_index=False)[["revenue", "profit"]].sum()
+              .sort_values("revenue", ascending=False).head(12))
+    all_cat = sku.groupby("category")["revenue"].sum().sort_values(ascending=False)
+    cum = (all_cat.cumsum() / all_cat.sum() * 100).loc[cat["category"]]
+    n80 = int((all_cat.cumsum() / all_cat.sum() * 100 < 80).sum()) + 1
+    t.section("Kategori dan porsi kumulatif",
+              f"Label menunjukkan porsi kumulatif. {n80} dari {len(all_cat)} kategori "
+              "sudah mencapai 80% revenue.")
+    t.chart(t.bar_h(cat["category"], cat["revenue"] / 1e6,
+                    text=[t.pct(c, 0) for c in cum],
+                    hover=[f"{k}<br>{t.rp(v)}<br>Kumulatif {t.pct(c)}"
+                           for k, v, c in zip(cat["category"], cat["revenue"], cum)],
+                    colors=[t.ACCENT if c <= 80 or i == 0 else t.DIM
+                            for i, c in enumerate(cum)],
+                    label_room=0.2))
+with c2:
+    top = prod.head(10)
+    tbl = pd.DataFrame({
+        "Produk": top["product_name"],
+        "Kategori": top["category"],
+        "Unit": [t.num(v) for v in top["qty"]],
+        "Revenue": [t.rp(v) for v in top["revenue"]],
+        "Margin riil": [t.pct(v) for v in top["margin"]],
+    })
+    t.section("Sepuluh produk dengan revenue terbesar", "Semua ukuran dari produk yang sama digabung.")
+    st.dataframe(tbl, hide_index=True, width="stretch", height=388)
+
+# --- Ukuran dan warna -------------------------------------------------------
+attr = run_query(f"""
+    SELECT p.size, p.color, SUM(f.quantity) AS qty
+    {JOIN} {where}
+    GROUP BY p.size, p.color
+""")
+c3, c4 = st.columns(2, gap="large")
+with c3:
+    order = ["S", "M", "L", "XL", "All Size"]
+    sz = attr.groupby("size")["qty"].sum().reindex(order).dropna()
+    t.section("Unit terjual per ukuran", "All Size untuk aksesori seperti topi dan tas.")
+    t.chart(t.bar_v(sz.index, sz.values, text=[t.num(v) for v in sz.values],
+                    hover=[f"Ukuran {k}<br>{t.num(v)} unit" for k, v in sz.items()],
+                    ytitle="Unit", height=290))
+with c4:
+    cl = attr.groupby("color")["qty"].sum().sort_values(ascending=False)
+    t.section("Unit terjual per warna")
+    t.chart(t.bar_h(cl.index, cl.values, text=[t.num(v) for v in cl.values],
+                    hover=[f"{k}<br>{t.num(v)} unit" for k, v in cl.items()],
+                    xtitle="Unit", height=290, label_room=0.2))
+
+# --- Catatan ----------------------------------------------------------------
+worst = thin.sort_values("revenue", ascending=False).head(1)
+lead = prod.iloc[0]
+points = [
+    f"<b>{lead['product_name']}</b> sendirian menyumbang <b>{t.pct(lead['revenue'] / tot_rev * 100)}</b> "
+    f"revenue ({t.rp(lead['revenue'])}). Pasokannya perlu diamankan.",
+]
+if len(thin):
+    points.append(
+        f"{len(thin)} SKU bermargin tipis menyerap <b>{t.pct(thin['revenue'].sum() / tot_rev * 100)}</b> "
+        f"revenue tapi hanya <b>{t.pct(thin['profit'].sum() / tot_gp * 100)}</b> gross profit.")
+if len(worst):
+    w = worst.iloc[0]
+    points.append(f"Contoh paling jelas: <b>{w['label']}</b>, revenue {t.rp(w['revenue'])} "
+                  f"dengan margin riil hanya {t.pct(w['margin'])}.")
+points.append(f"Ukuran <b>{sz.idxmax()}</b> dan warna <b>{cl.index[0]}</b> paling banyak terjual. "
+              "Ini bisa jadi patokan komposisi stok saat restock.")
+t.note(points)

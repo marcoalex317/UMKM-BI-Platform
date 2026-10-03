@@ -90,25 +90,36 @@ def build_where(stores: list[str] | None, channels: list[str] | None,
     return ("WHERE " + " AND ".join(clauses)) if clauses else ""
 
 
-def sidebar_filters(key_prefix: str = "") -> dict:
-    """Render filter standar di sidebar & kembalikan pilihannya.
+def render_filters(disabled: bool = False) -> dict:
+    """Filter standar di sidebar (periode, cabang, channel).
 
-    Dipakai lintas halaman agar konsisten (periode, cabang, channel).
+    Dipanggil dari streamlit_app.py supaya pilihan tetap sama saat pindah
+    halaman. Halaman yang tidak memakai filter tetap menampilkannya dalam
+    keadaan nonaktif agar pilihannya tidak hilang.
     """
     opts = get_filter_options()
-    st.sidebar.header("🔎 Filter")
-    date_from = st.sidebar.date_input(
-        "Dari tanggal", value=pd.to_datetime(opts["min_date"]),
-        key=f"{key_prefix}_from")
-    date_to = st.sidebar.date_input(
-        "Sampai tanggal", value=pd.to_datetime(opts["max_date"]),
-        key=f"{key_prefix}_to")
-    stores = st.sidebar.multiselect(
-        "Cabang", opts["stores"], default=[], key=f"{key_prefix}_stores",
-        help="Kosongkan untuk semua cabang")
-    channels = st.sidebar.multiselect(
-        "Channel", opts["channels"], default=[], key=f"{key_prefix}_channels",
-        help="Kosongkan untuk semua channel")
+    d_min = pd.to_datetime(opts["min_date"]).date()
+    d_max = pd.to_datetime(opts["max_date"]).date()
+
+    st.sidebar.markdown('<div class="side-label">Filter</div>', unsafe_allow_html=True)
+    rng = st.sidebar.date_input("Periode", value=(d_min, d_max), min_value=d_min,
+                                max_value=d_max, format="DD/MM/YYYY",
+                                key="flt_periode", disabled=disabled)
+    stores = st.sidebar.multiselect("Cabang", opts["stores"], key="flt_cabang",
+                                    placeholder="Semua cabang", disabled=disabled)
+    channels = st.sidebar.multiselect("Channel", opts["channels"], key="flt_channel",
+                                      placeholder="Semua channel", disabled=disabled)
+    if disabled:
+        st.sidebar.caption("Halaman ini menampilkan kondisi keseluruhan, "
+                           "jadi filter tidak dipakai.")
+
+    # Saat pengguna baru memilih tanggal awal, date_input hanya berisi satu nilai.
+    if isinstance(rng, (list, tuple)):
+        date_from = rng[0] if len(rng) > 0 else d_min
+        date_to = rng[1] if len(rng) > 1 else d_max
+    else:
+        date_from, date_to = rng, d_max
+
     return {
         "stores": stores or None,
         "channels": channels or None,
@@ -119,16 +130,12 @@ def sidebar_filters(key_prefix: str = "") -> dict:
     }
 
 
+def get_filters() -> dict:
+    """Ambil filter yang sudah dirender di streamlit_app.py."""
+    return st.session_state["flt"]
+
+
 def rupiah(x: float) -> str:
-    """Format angka ke Rupiah ringkas (Rb / Jt / M)."""
-    try:
-        x = float(x)
-    except (TypeError, ValueError):
-        return "-"
-    if abs(x) >= 1_000_000_000:
-        return f"Rp {x/1_000_000_000:.2f} M"
-    if abs(x) >= 1_000_000:
-        return f"Rp {x/1_000_000:.1f} Jt"
-    if abs(x) >= 1_000:
-        return f"Rp {x/1_000:.0f} Rb"
-    return f"Rp {x:,.0f}"
+    """Dipertahankan untuk kompatibilitas. Gunakan theme.rp untuk kode baru."""
+    from utils.theme import rp
+    return rp(x)
